@@ -29,9 +29,9 @@ struct RangBuoc{
 typedef struct RangBuoc Rb;
 
 int Findpoint(Rb rb1, Rb rb2, point *p) {
-	float det = rb1.a*rb2.b - rb2.a*rb1.b; // tim dinh thuc
+	float det = rb1.a*rb2.b - rb2.a*rb1.b; 
 	if (det == 0)
-		return 0; // neu dinh thuc bang 0 => vo nghiem
+		return 0; 
 	
 	p->x = (rb1.c*rb2.b - rb2.c*rb1.b) / det;
 	p->y = (rb1.a*rb2.c - rb2.a*rb1.c) / det;
