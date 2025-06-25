@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <math.h>
 #define MAX 100
 int M, N;
 int basic[MAX]; // Lưu các biến cơ bản đang ở mỗi hàng
@@ -15,6 +15,105 @@ void printInfo() {
     printf("\n{a11x1 + a12x2 + ... + a1nxn <= b1\n{...\n{am1x1 + am2x2 + ... + amnxn <= bm\n xi>=0\n\n");
     printf("DU LIEU DAU VAO GOM:\n- SO RANG BUOC (M)\n- SO BIEN (N)\n- MA TRAN HE SO VA CAC GIA TRI GIOI HAN CUA TUNG RANG BUOC\n- HE SO CUA HAM MUC TIEU\n\n");
     printf("\nBAT DAU:\n\n");
+}
+struct Cacdiem {
+	float x, y; 
+}; 
+
+typedef struct Cacdiem point;
+
+struct RangBuoc{
+	float a, b, c;
+}; 
+
+typedef struct RangBuoc Rb;
+
+int Findpoint(Rb rb1, Rb rb2, point *p) {
+	float det = rb1.a*rb2.b - rb2.a*rb1.b; 
+	if (det == 0)
+		return 0;
+	p->x = (rb1.c*rb2.b - rb2.c*rb1.b) / det;
+	p->y = (rb1.a*rb2.c - rb2.a*rb1.c) / det;
+	return 1;
+}
+
+int MienXD(point p, int so_rb, Rb RangBuoc[]) {
+	float value;
+	int i;
+	for (i = 0; i < so_rb; i++) {
+		value = RangBuoc[i].a * p.x + RangBuoc[i].b * p.y;
+		if (value > RangBuoc[i].c) return 0;
+	}
+	return 1;
+}
+
+void printPA(float x, float y, float c1, float c2) {
+	printf("x1 = %.3f x2 = %.3f\nZ = %.3f\n", x, y, c1*x + c2*y);
+}
+
+void geometric(Rb RangBuoc[], int n, float c1, float c2) {
+	point dinh[100];
+	int count = 0;
+	
+	point p;
+	int i, j;
+	for (i = 0; i < n - 1; i++) {
+		for (j = i + 1; j < n; j++) {
+			if (Findpoint(RangBuoc[i], RangBuoc[j], &p)) {
+				if (MienXD(p, n, RangBuoc)) {
+					dinh[count] = p;
+					count++;
+				}
+			}
+		}
+	}
+	
+	float max = c1 * dinh[0].x + c2 * dinh[0].y;
+	point best_point; best_point = dinh[0];
+	printf("Phuong an 1:\n");
+	printPA(dinh[0].x, dinh[0].y, c1, c2);
+	
+	float z;
+	for (i = 1; i < count; i++) {
+		z = c1 * dinh[i].x + c2 * dinh[i].y;
+		printf("Phuong an %d:\n", i + 1);
+		printPA(dinh[i].x, dinh[i].y, c1, c2);
+		if (max < z) {
+			max = z;
+			best_point = dinh[i];
+		}
+	}
+	printf("== KET QUA CUOI CUNG ==\n");
+	printf("\nGia tri toi uu Z = %.3f", max);
+	printf("\nx1 = %.3f\nx2 = %.3f", best_point.x, best_point.y);
+}
+
+void scandata(Rb Rang_buoc[], int *n_ptr, float *c1_ptr, float *c2_ptr) {
+	printf("Nhap so rang buoc dang M: "); scanf("%d", n_ptr);
+	
+	int i;
+	for (i = 0; i < *n_ptr; i++) {
+		printf("Nhap cac he so rang buoc %d: ", i + 1);
+		scanf("%f%f%f", &Rang_buoc[i].a, &Rang_buoc[i].b, &Rang_buoc[i].c);
+	}
+	
+	printf("Nhap he so ham muc tieu"); scanf("%f%f", c1_ptr, c2_ptr);
+}
+
+void scanFile_geo(Rb Rang_buoc[], int *n_ptr, float *c1_ptr, float *c2_ptr) {
+	char s[100];
+	printf("Nhap ten file: "); scanf("%s", s);
+	FILE *fptr;
+	fptr = fopen(s, "r");
+	fscanf(fptr, "%d", n_ptr);
+	for (int i = 0; i < *n_ptr; i++) {
+		fscanf(fptr, "%f", &Rang_buoc[i].a);
+		fscanf(fptr, "%f", &Rang_buoc[i].b);
+		fscanf(fptr, "%f", &Rang_buoc[i].c);
+	}
+	fscanf(fptr, "%f", c1_ptr);
+	fscanf(fptr, "%f", c2_ptr);
+	fclose(fptr);
 }
 
 void printTable(double t[MAX + 1][MAX + 1], FILE *fp, int choice) {
@@ -237,46 +336,80 @@ void DocFile(FILE *fout) {
 
 int main() {
     double t[MAX + 1][MAX + 1];
-
+	int method;
     printInfo();
+	printf("\nCac phuong phap:\n");
+	printf("1. Hinh hoc.\n");
+	printf("2. Don hinh (dang chuan tac).\n\n");
+	printf("====================\n");
+	printf("Chon phuong phap: "); scanf("%d", &method);
+	switch(method){
+		case 1: {
+			int n;
+			float c1, c2;
+			Rb RangBuoc[100];
+			printf("\nNhap du lieu:\n");
+			printf("1. Qua ban phim.\n");
+			printf("2. Qua file.\n");
+			printf("--------------------\n");
+			printf("\nChon cach nhap du lieu: ");
+			int nhap; scanf("%d", &nhap);
+			if (nhap == 1)
+				scandata(RangBuoc, &n, &c1, &c2);
+			else if (nhap == 2) {
+				scanFile_geo(RangBuoc, &n, &c1, &c2);
+			}
+			else {
+				printf("\nCach nhap du lieu khong hop le.");
+				return 1;
+			}
+			n++;
+			RangBuoc[n - 1].a = -1; 
+			RangBuoc[n - 1].b = 0; RangBuoc[n - 1].c = 0; 
+			n++;
+			RangBuoc[n - 1].a = 0; 
+			RangBuoc[n - 1].b = -1; RangBuoc[n - 1].c = 0;
+	
+			geometric(RangBuoc, n, c1, c2);
+			break;
+		}	
+		case 2:{
+			int choice;
+    		do {
+        		printf("Chon cach nhap du lieu:\n1. Nhap tu ban phim\n2. Nhap va ghi vao file\nLua chon: ");
+        		scanf("%d", &choice);
+        		if (choice != 1 && choice != 2) {
+            	printf("\nLua chon khong hop le! vui long nhap lai.\n");
+        		}
+    		} while (choice != 1 && choice != 2);
 
-    int choice;
+    		if (choice == 1) {
+        	printf("Nhap so rang buoc M: ");
+        	scanf("%d", &M);
+        	printf("Nhap so bien N: ");
+        	scanf("%d", &N);
 
-    do {
-        printf("Chon cach nhap du lieu:\n1. Nhap tu ban phim\n2. Nhap va ghi vao file\nLua chon: ");
-        scanf("%d", &choice);
-        if (choice != 1 && choice != 2) {
-            printf("\nLua chon khong hop le! vui long nhap lai.\n");
-        }
-    } while (choice != 1 && choice != 2);
+        	printf("Nhap he so rang buoc va gioi han (dang <=):\n");
+        	for (int i = 0; i < M; i++) {
+            	for (int j = 0; j <= N; j++) {
+                	scanf("%lf", &t[i][j]);
+            	}
+            	basic[i] = N + i;
+        	}
 
-    if (choice == 1) {
-        printf("Nhap so rang buoc M: ");
-        scanf("%d", &M);
-        printf("Nhap so bien N: ");
-        scanf("%d", &N);
-
-        printf("Nhap he so rang buoc va gioi han (dang <=):\n");
-        for (int i = 0; i < M; i++) {
-            for (int j = 0; j <= N; j++) {
-                scanf("%lf", &t[i][j]);
-            }
-            basic[i] = N + i;
-        }
-
-        printf("Nhap he so ham muc tieu (dang MAX Z):\n");
-        for (int j = 0; j < N; j++) {
+        	printf("Nhap he so ham muc tieu (dang MAX Z):\n");
+        	for (int j = 0; j < N; j++) {
             scanf("%lf", &t[M][j]);
-        }
-        t[M][N] = 0;
-        printTable(t, NULL, choice);
-        SimplexMethod(t, NULL, choice);
+        	}
+        	t[M][N] = 0;
+        	printTable(t, NULL, choice);
+        	SimplexMethod(t, NULL, choice);
 
-        printf("\n== KET QUA CUOI CUNG ==\n");
+        	printf("\n== KET QUA CUOI CUNG ==\n");
 
-        printf("Gia tri toi uu Z = %lf\n", -t[M][N]);
+        	printf("Gia tri toi uu Z = %lf\n", -t[M][N]);
 
-        for (int j = 0; j < N; j++) {
+        	for (int j = 0; j < N; j++) {
             double value = 0;
             for (int i = 0; i < M; i++) {
                 if (basic[i] == j) {
@@ -285,71 +418,74 @@ int main() {
                 }
             }
             printf("x%d = %lf\n", j + 1, value);
-        }
-    } else if (choice == 2) {
-        char saveFile[100];
-        FILE *saveFp = NULL;
-        printf("Nhap ten file de ghi du lieu: ");
-        scanf("%s", saveFile);
+        	}
+    		} else if (choice == 2) {
+        	char saveFile[100];
+        	FILE *saveFp = NULL;
+        	printf("Nhap ten file de ghi du lieu: ");
+        	scanf("%s", saveFile);
         
-        saveFp = fopen(saveFile, "w");
+        	saveFp = fopen(saveFile, "w");
         
-        if (saveFp == NULL) {
+        	if (saveFp == NULL) {
             printf("Khong the tao file %s\n", saveFile);
             return 1;
-        }
+        	}
 
-        printf("Nhap so rang buoc M: ");
-        scanf("%d", &M);
+        	printf("Nhap so rang buoc M: ");
+        	scanf("%d", &M);
 
-        printf("Nhap so bien N: ");
-        scanf("%d", &N);
+        	printf("Nhap so bien N: ");
+        	scanf("%d", &N);
 
-        fprintf(saveFp, "%d %d\n", M, N);
-        printf("Nhap he so rang buoc va gioi han (dang <=):\n");
-        for (int i = 0; i < M; i++) {
-            for (int j = 0; j <= N; j++) {
-                scanf("%lf", &t[i][j]);
-                fprintf(saveFp, "%.3lf ", t[i][j]);
+        	fprintf(saveFp, "%d %d\n", M, N);
+        	printf("Nhap he so rang buoc va gioi han (dang <=):\n");
+        	for (int i = 0; i < M; i++) {
+            	for (int j = 0; j <= N; j++) {
+                	scanf("%lf", &t[i][j]);
+                	fprintf(saveFp, "%.3lf ", t[i][j]);
             }
             fprintf(saveFp, "\n");
             basic[i] = N + i;
         }
 
-        printf("Nhap he so ham muc tieu (dang MAX Z):\n");
-        for (int j = 0; j < N; j++) {
-            scanf("%lf", &t[M][j]);
-            fprintf(saveFp, "%.3lf ", t[M][j]);
-        }
-        t[M][N] = 0;
-        fprintf(saveFp, "%.3lf\n", t[M][N]);
+        	printf("Nhap he so ham muc tieu (dang MAX Z):\n");
+        	for (int j = 0; j < N; j++) {
+            	scanf("%lf", &t[M][j]);
+            	fprintf(saveFp, "%.3lf ", t[M][j]);
+        	}
+        	t[M][N] = 0;
+        	fprintf(saveFp, "%.3lf\n", t[M][N]);
 
-        printTable(t, saveFp, choice);
-        SimplexMethod(t, saveFp, choice);
+        	printTable(t, saveFp, choice);
+        	SimplexMethod(t, saveFp, choice);
 
-        fprintf(saveFp, "\n== KET QUA CUOI CUNG ==\n");
-        fprintf(saveFp, "Gia tri toi uu Z = %lf\n", -t[M][N]);
+        	fprintf(saveFp, "\n== KET QUA CUOI CUNG ==\n");
+        	fprintf(saveFp, "Gia tri toi uu Z = %lf\n", -t[M][N]);
 
-        for (int j = 0; j < N; j++) {
-            double value = 0;
-            for (int i = 0; i < M; i++) {
-                if (basic[i] == j) {
-                    value = t[i][N];
-                    break;
+        	for (int j = 0; j < N; j++) {
+            	double value = 0;
+            	for (int i = 0; i < M; i++) {
+                	if (basic[i] == j) {
+                   		value = t[i][N];
+                    	break;
                 }
             }
             fprintf(saveFp, "x%d = %lf\n", j + 1, value);
-        }
-        fclose(saveFp);
-        printf("\n== NOI DUNG FILE %s ==\n", saveFile);
-        saveFp = fopen(saveFile, "r");
-        if (saveFp != NULL) {
-            DocFile(saveFp);
-            fclose(saveFp);
-        } else {
+        	}
+        	fclose(saveFp);
+        	printf("\n== NOI DUNG FILE %s ==\n", saveFile);
+        	saveFp = fopen(saveFile, "r");
+        	if (saveFp != NULL) {
+            	DocFile(saveFp);
+            	fclose(saveFp);
+        	} else {
             printf("Khong the mo file %s\n", saveFile);
-        }
-    }
-
+        	}
+    	}
+			break;
+		}
+			
+	}
     return 0;
 }
